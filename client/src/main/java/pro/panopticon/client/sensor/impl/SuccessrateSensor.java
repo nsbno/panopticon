@@ -7,9 +7,9 @@ import org.slf4j.LoggerFactory;
 import pro.panopticon.client.model.Measurement;
 import pro.panopticon.client.sensor.Sensor;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
 
 import static java.util.stream.Collectors.toList;
 
@@ -40,7 +40,7 @@ public class SuccessrateSensor implements Sensor {
      */
     private final Double errorLimit;
 
-    private final Map<AlertInfo, CircularFifoQueue<Event>> eventQueues = new HashMap<>();
+    private final Map<AlertInfo, CircularFifoQueue<Tick>> eventQueues = new HashMap<>();
 
     public SuccessrateSensor(int numberToKeep, Double warnLimit, Double errorLimit) {
         this.numberToKeep = numberToKeep;
@@ -60,7 +60,7 @@ public class SuccessrateSensor implements Sensor {
 
     public synchronized void tickFailure(AlertInfo alertInfo) {
         try {
-            getQueueForKey(alertInfo).add(Event.FAILURE);
+            getQueueForKey(alertInfo).add(new Tick(Event.FAILURE));
         } catch (Exception e) {
             LOG.warn("Something went wrong when counting FAILURE for " + alertInfo.getSensorKey(), e);
         }
@@ -68,49 +68,74 @@ public class SuccessrateSensor implements Sensor {
 
     public synchronized void tickSuccess(AlertInfo alertInfo) {
         try {
-            getQueueForKey(alertInfo).add(Event.SUCCESS);
+            getQueueForKey(alertInfo).add(new Tick(Event.SUCCESS));
         } catch (Exception e) {
             LOG.warn("Something went wrong when counting SUCCESS for " + alertInfo.getSensorKey(), e);
         }
     }
 
-    private CircularFifoQueue<Event> getQueueForKey(AlertInfo key) {
+    private CircularFifoQueue<Tick> getQueueForKey(AlertInfo key) {
         return eventQueues.computeIfAbsent(key, k -> new CircularFifoQueue<>(numberToKeep));
     }
 
     @Override
     public List<Measurement> measure() {
         return eventQueues.entrySet().stream()
-                .map((Map.Entry<AlertInfo, CircularFifoQueue<Event>> e) -> {
+                .map((Map.Entry<AlertInfo, CircularFifoQueue<Tick>> e) -> {
                     AlertInfo alertInfo = e.getKey();
-                    List<Event> events = e.getValue().stream().collect(toList());
+                    List<Tick> events = new ArrayList<>(e.getValue());
                     int all = events.size();
-                    long success = events.stream().filter(a -> a == Event.SUCCESS).count();
-                    long failure = events.stream().filter(a -> a == Event.FAILURE).count();
+                    long success = events.stream().filter(tick -> tick.event == Event.SUCCESS).count();
+                    long failure = events.stream().filter(tick -> tick.event == Event.FAILURE).count();
                     double percentFailureDouble = all > 0 ? (double) failure / (double) all : 0;
                     boolean enoughDataToAlert = all == numberToKeep;
+                    boolean allTicksAreTooOld = allTicksAreTooOld(events);
                     String display = String.format("Last %s calls: %s success, %s failure (%.2f%% failure)%s",
                             Integer.min(all, numberToKeep),
                             success,
                             all - success,
                             percentFailureDouble * 100,
-                            enoughDataToAlert ? "" : " - not enough calls to report status yet"
+                            enoughDataToAlert ? "" : " - not enough calls to report status yet",
+                            allTicksAreTooOld ? "" : " - all ticks are outdated"
                     );
-                    return new Measurement(alertInfo.getSensorKey(), getStatusFromPercentage(enoughDataToAlert, percentFailureDouble), display, new Measurement.CloudwatchValue(percentFailureDouble * 100, StandardUnit.Percent), alertInfo.getDescription());
+                    String status = decideStatus(enoughDataToAlert, percentFailureDouble, events);
+                    return new Measurement(alertInfo.getSensorKey(), status, display, new Measurement.CloudwatchValue(percentFailureDouble * 100, StandardUnit.Percent), alertInfo.getDescription());
                 })
                 .collect(toList());
     }
 
-    private String getStatusFromPercentage(boolean enoughDataToAlert, double percentFailure) {
+    private String decideStatus(boolean enoughDataToAlert, double percentFailure, List<Tick> events) {
         if (!enoughDataToAlert) return "INFO";
+        if (allTicksAreTooOld(events)) return "INFO";
         if (errorLimit != null && percentFailure >= errorLimit) return "ERROR";
         if (warnLimit != null && percentFailure >= warnLimit) return "WARN";
         return "INFO";
     }
 
+    private boolean allTicksAreTooOld(List<Tick> events) {
+        Optional<Tick> tickFromLastHour = events.stream()
+                .filter(tick -> ChronoUnit.HOURS.between(tick.createdAt, LocalDateTime.now()) < 1)
+                .findAny();
+        if (tickFromLastHour.isPresent() || events.isEmpty()) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
     private enum Event {
         SUCCESS,
         FAILURE
+    }
+
+    private static class Tick {
+        private final Event event;
+        private final LocalDateTime createdAt;
+
+        private Tick(Event event) {
+            this.event = event;
+            this.createdAt = LocalDateTime.now();
+        }
     }
 
 }

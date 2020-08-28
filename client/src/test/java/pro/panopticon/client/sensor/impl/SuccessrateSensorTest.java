@@ -1,6 +1,5 @@
 package pro.panopticon.client.sensor.impl;
 
-import org.hamcrest.core.StringContains;
 import org.junit.Test;
 import pro.panopticon.client.model.Measurement;
 
