@@ -90,7 +90,7 @@ public class SuccessrateSensor implements Sensor {
                     double percentFailureDouble = all > 0 ? (double) failure / (double) all : 0;
                     boolean enoughDataToAlert = all == numberToKeep;
                     boolean allTicksAreTooOld = allTicksAreTooOld(events);
-                    String display = String.format("Last %s calls: %s success, %s failure (%.2f%% failure)%s",
+                    String display = String.format("Last %s calls: %s success, %s failure (%.2f%% failure)%s%s",
                             Integer.min(all, numberToKeep),
                             success,
                             all - success,
@@ -98,15 +98,15 @@ public class SuccessrateSensor implements Sensor {
                             enoughDataToAlert ? "" : " - not enough calls to report status yet",
                             allTicksAreTooOld ? "" : " - all ticks are outdated"
                     );
-                    String status = decideStatus(enoughDataToAlert, percentFailureDouble, events);
+                    String status = decideStatus(enoughDataToAlert, percentFailureDouble, allTicksAreTooOld);
                     return new Measurement(alertInfo.getSensorKey(), status, display, new Measurement.CloudwatchValue(percentFailureDouble * 100, StandardUnit.Percent), alertInfo.getDescription());
                 })
                 .collect(toList());
     }
 
-    private String decideStatus(boolean enoughDataToAlert, double percentFailure, List<Tick> events) {
+    private String decideStatus(boolean enoughDataToAlert, double percentFailure, boolean allTicksAreTooOld) {
         if (!enoughDataToAlert) return "INFO";
-        if (allTicksAreTooOld(events)) return "INFO";
+        if (allTicksAreTooOld) return "INFO";
         if (errorLimit != null && percentFailure >= errorLimit) return "ERROR";
         if (warnLimit != null && percentFailure >= warnLimit) return "WARN";
         return "INFO";
