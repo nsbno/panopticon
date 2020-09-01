@@ -12,6 +12,7 @@ import java.util.stream.IntStream;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.Assert.assertThat;
+import static pro.panopticon.client.sensor.impl.SuccessrateSensor.HOURS_FOR_ERROR_TICK_TO_BE_CONSIDERED_OUTDATED;
 
 public class SuccessrateSensorTest {
 
@@ -128,11 +129,13 @@ public class SuccessrateSensorTest {
     public void should_ignore_errors_if_all_ticks_are_outdated() {
         NowSupplierMock nowSupplier = new NowSupplierMock();
         SuccessrateSensor sensor = new SuccessrateSensor(100, 0.1, 0.2, nowSupplier);
+
         nowSupplier.mockThePast = true;
-        IntStream.range(0, 50).forEach(i -> sensor.tickSuccess(new SuccessrateSensor.AlertInfo("key1", "description")));
         IntStream.range(0, 50).forEach(i -> sensor.tickFailure(new SuccessrateSensor.AlertInfo("key1", "description")));
 
         nowSupplier.mockThePast = false;
+        IntStream.range(0, 50).forEach(i -> sensor.tickSuccess(new SuccessrateSensor.AlertInfo("key1", "description")));
+        
         List<Measurement> measurements = sensor.measure();
 
         Optional<Measurement> key1 = measurements.stream().filter(m -> m.key.equals("key1")).findAny();
@@ -141,13 +144,12 @@ public class SuccessrateSensorTest {
 
 
     class NowSupplierMock implements NowSupplier {
-        public static final int HOURS_FOR_TICKS_TO_BE_CONSIDERED_OUTDATED = 4;
         boolean mockThePast = false;
 
         @Override
         public LocalDateTime now() {
             if (mockThePast) {
-                return LocalDateTime.now().minusHours(HOURS_FOR_TICKS_TO_BE_CONSIDERED_OUTDATED);
+                return LocalDateTime.now().minusHours(HOURS_FOR_ERROR_TICK_TO_BE_CONSIDERED_OUTDATED + 4);
             } else {
                 return LocalDateTime.now();
             }
