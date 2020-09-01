@@ -92,27 +92,29 @@ public class SuccessrateSensor implements Sensor {
     @Override
     public List<Measurement> measure() {
         return eventQueues.entrySet().stream()
-                .map((Map.Entry<AlertInfo, CircularFifoQueue<Tick>> e) -> {
-                    AlertInfo alertInfo = e.getKey();
-                    List<Tick> ticks = new ArrayList<>(e.getValue());
-                    int all = ticks.size();
-                    long success = ticks.stream().filter(tick -> tick.event == Event.SUCCESS).count();
-                    long failure = ticks.stream().filter(tick -> tick.event == Event.FAILURE).count();
-                    double percentFailureDouble = all > 0 ? (double) failure / (double) all : 0;
-                    boolean enoughDataToAlert = all == numberToKeep;
-                    boolean hasRecentErrorTicks = hasRecentErrorTicks(ticks);
-                    String display = String.format("Last %s calls: %s success, %s failure (%.2f%% failure)%s%s",
-                            Integer.min(all, numberToKeep),
-                            success,
-                            all - success,
-                            percentFailureDouble * 100,
-                            enoughDataToAlert ? "" : " - not enough calls to report status yet",
-                            hasRecentErrorTicks ? "" : " - no recent error ticks"
-                    );
-                    String status = decideStatus(enoughDataToAlert, percentFailureDouble, hasRecentErrorTicks);
-                    return new Measurement(alertInfo.getSensorKey(), status, display, new Measurement.CloudwatchValue(percentFailureDouble * 100, StandardUnit.Percent), alertInfo.getDescription());
-                })
+                .map(this::measure)
                 .collect(toList());
+    }
+
+    private Measurement measure(Map.Entry<AlertInfo, CircularFifoQueue<Tick>> e) {
+        AlertInfo alertInfo = e.getKey();
+        List<Tick> ticks = new ArrayList<>(e.getValue());
+        int all = ticks.size();
+        long success = ticks.stream().filter(tick -> tick.event == Event.SUCCESS).count();
+        long failure = ticks.stream().filter(tick -> tick.event == Event.FAILURE).count();
+        double percentFailureDouble = all > 0 ? (double) failure / (double) all : 0;
+        boolean enoughDataToAlert = all == numberToKeep;
+        boolean hasRecentErrorTicks = hasRecentErrorTicks(ticks);
+        String display = String.format("Last %s calls: %s success, %s failure (%.2f%% failure)%s%s",
+                Integer.min(all, numberToKeep),
+                success,
+                all - success,
+                percentFailureDouble * 100,
+                enoughDataToAlert ? "" : " - not enough calls to report status yet",
+                hasRecentErrorTicks ? "" : " - no recent error ticks"
+        );
+        String status = decideStatus(enoughDataToAlert, percentFailureDouble, hasRecentErrorTicks);
+        return new Measurement(alertInfo.getSensorKey(), status, display, new Measurement.CloudwatchValue(percentFailureDouble * 100, StandardUnit.Percent), alertInfo.getDescription());
     }
 
     private String decideStatus(boolean enoughDataToAlert, double percentFailure, boolean hasRecentErrorTicks) {
