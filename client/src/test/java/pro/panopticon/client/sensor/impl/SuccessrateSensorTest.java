@@ -2,7 +2,9 @@ package pro.panopticon.client.sensor.impl;
 
 import org.junit.Test;
 import pro.panopticon.client.model.Measurement;
+import pro.panopticon.client.util.NowSupplier;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
@@ -120,5 +122,35 @@ public class SuccessrateSensorTest {
 
         Optional<Measurement> key1 = measurements.stream().filter(m -> m.key.equals("key1")).findAny();
         assertThat(key1.get().description, is("description"));
+    }
+
+    @Test
+    public void should_ignore_errors_if_all_ticks_are_outdated() {
+        NowSupplierMock nowSupplier = new NowSupplierMock();
+        SuccessrateSensor sensor = new SuccessrateSensor(100, 0.1, 0.2, nowSupplier);
+        nowSupplier.mockThePast = true;
+        IntStream.range(0, 50).forEach(i -> sensor.tickSuccess(new SuccessrateSensor.AlertInfo("key1", "description")));
+        IntStream.range(0, 50).forEach(i -> sensor.tickFailure(new SuccessrateSensor.AlertInfo("key1", "description")));
+
+        nowSupplier.mockThePast = false;
+        List<Measurement> measurements = sensor.measure();
+
+        Optional<Measurement> key1 = measurements.stream().filter(m -> m.key.equals("key1")).findAny();
+        assertThat(key1.get().status, is("INFO"));
+    }
+
+
+    class NowSupplierMock implements NowSupplier {
+        public static final int HOURS_FOR_TICKS_TO_BE_CONSIDERED_OUTDATED = 4;
+        boolean mockThePast = false;
+
+        @Override
+        public LocalDateTime now() {
+            if (mockThePast) {
+                return LocalDateTime.now().minusHours(HOURS_FOR_TICKS_TO_BE_CONSIDERED_OUTDATED);
+            } else {
+                return LocalDateTime.now();
+            }
+        }
     }
 }

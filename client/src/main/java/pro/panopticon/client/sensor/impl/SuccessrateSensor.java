@@ -6,6 +6,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pro.panopticon.client.model.Measurement;
 import pro.panopticon.client.sensor.Sensor;
+import pro.panopticon.client.util.NowSupplier;
+import pro.panopticon.client.util.NowSupplierImpl;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -41,13 +43,21 @@ public class SuccessrateSensor implements Sensor {
     private final Double errorLimit;
 
     private final Map<AlertInfo, CircularFifoQueue<Tick>> eventQueues = new HashMap<>();
+    private final NowSupplier nowSupplier;
 
     public SuccessrateSensor(int numberToKeep, Double warnLimit, Double errorLimit) {
         this.numberToKeep = numberToKeep;
         this.warnLimit = warnLimit;
         this.errorLimit = errorLimit;
+        this.nowSupplier = new NowSupplierImpl();
     }
 
+    SuccessrateSensor(int numberToKeep, Double warnLimit, Double errorLimit, NowSupplier nowSupplier) {
+        this.numberToKeep = numberToKeep;
+        this.warnLimit = warnLimit;
+        this.errorLimit = errorLimit;
+        this.nowSupplier = nowSupplier;
+    }
     @Deprecated
     public synchronized void tickSuccess(String key) {
         tickSuccess(new AlertInfo(key, null));
@@ -60,7 +70,7 @@ public class SuccessrateSensor implements Sensor {
 
     public synchronized void tickFailure(AlertInfo alertInfo) {
         try {
-            getQueueForKey(alertInfo).add(new Tick(Event.FAILURE));
+            getQueueForKey(alertInfo).add(new Tick(Event.FAILURE, nowSupplier.now()));
         } catch (Exception e) {
             LOG.warn("Something went wrong when counting FAILURE for " + alertInfo.getSensorKey(), e);
         }
@@ -68,7 +78,7 @@ public class SuccessrateSensor implements Sensor {
 
     public synchronized void tickSuccess(AlertInfo alertInfo) {
         try {
-            getQueueForKey(alertInfo).add(new Tick(Event.SUCCESS));
+            getQueueForKey(alertInfo).add(new Tick(Event.SUCCESS, nowSupplier.now()));
         } catch (Exception e) {
             LOG.warn("Something went wrong when counting SUCCESS for " + alertInfo.getSensorKey(), e);
         }
@@ -114,7 +124,7 @@ public class SuccessrateSensor implements Sensor {
 
     private boolean allTicksAreTooOld(List<Tick> events) {
         Optional<Tick> tickFromLastHour = events.stream()
-                .filter(tick -> ChronoUnit.HOURS.between(tick.createdAt, LocalDateTime.now()) < 1)
+                .filter(tick -> ChronoUnit.HOURS.between(tick.createdAt, nowSupplier.now()) < 1)
                 .findAny();
         if (tickFromLastHour.isPresent() || events.isEmpty()) {
             return false;
@@ -132,9 +142,9 @@ public class SuccessrateSensor implements Sensor {
         private final Event event;
         private final LocalDateTime createdAt;
 
-        private Tick(Event event) {
+        private Tick(Event event, LocalDateTime createdAt) {
             this.event = event;
-            this.createdAt = LocalDateTime.now();
+            this.createdAt = createdAt;
         }
     }
 
