@@ -93,13 +93,13 @@ public class SuccessrateSensor implements Sensor {
         return eventQueues.entrySet().stream()
                 .map((Map.Entry<AlertInfo, CircularFifoQueue<Tick>> e) -> {
                     AlertInfo alertInfo = e.getKey();
-                    List<Tick> events = new ArrayList<>(e.getValue());
-                    int all = events.size();
-                    long success = events.stream().filter(tick -> tick.event == Event.SUCCESS).count();
-                    long failure = events.stream().filter(tick -> tick.event == Event.FAILURE).count();
+                    List<Tick> ticks = new ArrayList<>(e.getValue());
+                    int all = ticks.size();
+                    long success = ticks.stream().filter(tick -> tick.event == Event.SUCCESS).count();
+                    long failure = ticks.stream().filter(tick -> tick.event == Event.FAILURE).count();
                     double percentFailureDouble = all > 0 ? (double) failure / (double) all : 0;
                     boolean enoughDataToAlert = all == numberToKeep;
-                    boolean allTicksAreTooOld = allTicksAreTooOld(events);
+                    boolean allTicksAreTooOld = allTicksAreTooOld(ticks);
                     String display = String.format("Last %s calls: %s success, %s failure (%.2f%% failure)%s%s",
                             Integer.min(all, numberToKeep),
                             success,
