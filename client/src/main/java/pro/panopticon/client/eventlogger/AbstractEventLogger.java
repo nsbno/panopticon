@@ -101,7 +101,7 @@ public class AbstractEventLogger implements Sensor {
             cloudwatchClient.sendStatistics(namespace, statistics);
         }
 
-        return counts.entrySet().stream()
+        return countsToProcess.entrySet().stream()
                 .map(e -> new Measurement("audit." + e.getKey(), "INFO", "Last minute: " + e.getValue().doubleValue(), ""))
                 .collect(toList());
     }
