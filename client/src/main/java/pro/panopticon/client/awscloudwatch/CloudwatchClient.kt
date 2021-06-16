@@ -16,8 +16,10 @@ import java.util.ArrayList
 import java.util.Date
 
 class CloudwatchClient(cloudwatchConfig: HasCloudwatchConfig) {
+    
     private val LOG = LoggerFactory.getLogger(this.javaClass)
     private val amazonCloudWatch: AmazonCloudWatch
+    
     private fun credentialsProvided(cloudwatchConfig: HasCloudwatchConfig): Boolean {
         val hasAccessKey = !cloudwatchConfig.awsAccessKeyId.isNullOrEmpty()
         val hasSecretKey = !cloudwatchConfig.awsSecretKey.isNullOrEmpty()
