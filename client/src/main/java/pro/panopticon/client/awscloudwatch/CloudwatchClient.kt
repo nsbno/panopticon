@@ -19,8 +19,8 @@ class CloudwatchClient(cloudwatchConfig: HasCloudwatchConfig) {
     private val LOG = LoggerFactory.getLogger(this.javaClass)
     private val amazonCloudWatch: AmazonCloudWatch
     private fun credentialsProvided(cloudwatchConfig: HasCloudwatchConfig): Boolean {
-        val hasAccessKey = !Strings.isNullOrEmpty(cloudwatchConfig.awsAccessKeyId)
-        val hasSecretKey = !Strings.isNullOrEmpty(cloudwatchConfig.awsSecretKey)
+        val hasAccessKey = !cloudwatchConfig.awsAccessKeyId.isNullOrEmpty()
+        val hasSecretKey = !cloudwatchConfig.awsSecretKey.isNullOrEmpty()
         require(hasAccessKey == hasSecretKey) {
             "Either Access Key ID or Secret Key is missing. Please provide both, " +
                     "or neither if you want to defer to DefaultAWSCredentialsProviderChain"
