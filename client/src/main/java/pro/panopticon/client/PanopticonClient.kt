@@ -131,6 +131,6 @@ class PanopticonClient(
 
     init {
         client = createHttpClient()
-        namespace = String.format("sensor-%s-%s", hasCloudwatchConfig?.appName, hasCloudwatchConfig?.environment)
+        namespace = String.format("sensor-${hasCloudwatchConfig?.appName}-${hasCloudwatchConfig?.environment}")
     }
 }
