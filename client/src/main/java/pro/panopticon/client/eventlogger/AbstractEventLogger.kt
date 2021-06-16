@@ -84,11 +84,13 @@ abstract class AbstractEventLogger(hasCloudwatchConfig: HasCloudwatchConfig, clo
             cloudwatchClient!!.sendStatistics(namespace, statistics)
         }
         return countsToProcess.entries
-            .map { e: Map.Entry<String, DoubleAdder> ->
-                Measurement("audit." + e.key,
-                    "INFO",
-                    "Last minute: " + e.value.toDouble(),
-                    "")
+            .map { (key, value) ->
+                Measurement(
+                    key = "audit.$key", 
+                    status = "INFO",
+                    displayValue = "Last minute: ${value.toDouble()}",
+                    description = ""
+                )
             }
             .toList()
     }
