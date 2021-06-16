@@ -1,12 +1,12 @@
 package pro.panopticon.client
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import mu.KotlinLogging
 import org.apache.http.client.config.RequestConfig
 import org.apache.http.client.methods.HttpPost
 import org.apache.http.entity.BasicHttpEntity
 import org.apache.http.impl.client.CloseableHttpClient
 import org.apache.http.impl.client.HttpClientBuilder
-import org.slf4j.LoggerFactory
 import pro.panopticon.client.awscloudwatch.CloudwatchClient
 import pro.panopticon.client.awscloudwatch.HasCloudwatchConfig
 import pro.panopticon.client.model.ComponentInfo
@@ -25,7 +25,7 @@ class PanopticonClient(
     private val hasCloudwatchConfig: HasCloudwatchConfig?,
     private val cloudwatchClient: CloudwatchClient?,
 ) {
-    private val LOG = LoggerFactory.getLogger(this.javaClass)
+    private val LOG = KotlinLogging.logger { }
     private val client: CloseableHttpClient
     private val namespace: String
 

@@ -13,7 +13,7 @@ class MemorySensor @JvmOverloads constructor(
     private val errorLimitNow: Int = 95,
     private val warnLimitHeap: Int = 75,
     private val errorLimitHeap: Int = 95,
-    hostname: String? = null
+    hostname: String? = null,
 ) : Sensor {
     private val hostname: Optional<String> = Optional.ofNullable(hostname)
     override fun measure(): List<Measurement> {
@@ -30,7 +30,7 @@ class MemorySensor @JvmOverloads constructor(
         used: Long,
         max: Long,
         warnLimit: Int,
-        errorLimit: Int
+        errorLimit: Int,
     ) {
         if (max == 0L || used == -1L) {
             return

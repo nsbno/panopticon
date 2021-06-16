@@ -1,8 +1,8 @@
 package pro.panopticon.client.sensor.impl
 
 import com.amazonaws.services.cloudwatch.model.StandardUnit
+import mu.KotlinLogging
 import org.apache.commons.collections4.queue.CircularFifoQueue
-import org.slf4j.LoggerFactory
 import pro.panopticon.client.model.Measurement
 import pro.panopticon.client.sensor.Sensor
 import pro.panopticon.client.util.NowSupplier
@@ -13,7 +13,7 @@ import java.util.ArrayList
 import java.util.HashMap
 
 open class SuccessrateSensor : Sensor {
-    private val LOG = LoggerFactory.getLogger(this.javaClass)
+    private val LOG = KotlinLogging.logger { }
 
     /**
      * Number of events to keep.

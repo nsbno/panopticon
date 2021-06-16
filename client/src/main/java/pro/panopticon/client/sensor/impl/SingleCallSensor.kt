@@ -3,12 +3,11 @@ package pro.panopticon.client.sensor.impl
 import pro.panopticon.client.model.Measurement
 import pro.panopticon.client.sensor.Sensor
 import java.util.HashMap
-import java.util.stream.Collectors
 
 open class SingleCallSensor : Sensor {
     private val measurements: MutableMap<Sensor.AlertInfo, Status>
     override fun measure(): List<Measurement> {
-        return measurements.entries.map { 
+        return measurements.entries.map {
             Measurement(
                 it.key.sensorKey,
                 getPanopticonStatus(it.value),

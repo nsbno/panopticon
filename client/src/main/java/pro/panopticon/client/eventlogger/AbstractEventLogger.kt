@@ -86,7 +86,7 @@ abstract class AbstractEventLogger(hasCloudwatchConfig: HasCloudwatchConfig, clo
         return countsToProcess.entries
             .map { (key, value) ->
                 Measurement(
-                    key = "audit.$key", 
+                    key = "audit.$key",
                     status = "INFO",
                     displayValue = "Last minute: ${value.toDouble()}",
                     description = ""

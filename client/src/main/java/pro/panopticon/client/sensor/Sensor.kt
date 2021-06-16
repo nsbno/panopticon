@@ -18,7 +18,7 @@ fun interface Sensor {
          * Example:
          * "When this alert is triggered, the critical Feature X is not working properly. You should contact Company Y."
          */
-        val description: String
+        val description: String,
     ) {
 
         override fun equals(o: Any?): Boolean {
@@ -26,7 +26,7 @@ fun interface Sensor {
             if (o == null || javaClass != o.javaClass) return false
             val alertInfo = o as AlertInfo
             return sensorKey == alertInfo.sensorKey &&
-                description == alertInfo.description
+                   description == alertInfo.description
         }
 
         override fun hashCode(): Int {
@@ -35,9 +35,9 @@ fun interface Sensor {
 
         override fun toString(): String {
             return "AlertInfo{" +
-                "sensorKey='" + sensorKey + '\'' +
-                ", description='" + description + '\'' +
-                '}'
+                   "sensorKey='" + sensorKey + '\'' +
+                   ", description='" + description + '\'' +
+                   '}'
         }
     }
 }
