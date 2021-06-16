@@ -71,7 +71,7 @@ abstract class AbstractEventLogger(hasCloudwatchConfig: HasCloudwatchConfig, clo
     }
 
     private fun performTick(event: HasEventInfo, count: Double) {
-        counts.computeIfAbsent(event.eventName) { s: String? -> DoubleAdder() }.add(count)
+        counts.computeIfAbsent(event.eventName) { DoubleAdder() }.add(count)
     }
 
     override fun measure(): List<Measurement> {
