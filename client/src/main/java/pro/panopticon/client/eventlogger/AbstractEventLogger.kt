@@ -116,6 +116,6 @@ abstract class AbstractEventLogger(hasCloudwatchConfig: HasCloudwatchConfig, clo
     init {
         this.hasCloudwatchConfig = hasCloudwatchConfig
         this.cloudwatchClient = cloudwatchClient
-        namespace = String.format("audit-%s-%s", hasCloudwatchConfig.appName, hasCloudwatchConfig.environment)
+        namespace = "audit-${hasCloudwatchConfig.appName}-${hasCloudwatchConfig.environment}"
     }
 }
