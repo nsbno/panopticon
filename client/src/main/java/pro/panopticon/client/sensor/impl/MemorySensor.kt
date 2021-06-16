@@ -5,64 +5,58 @@ import pro.panopticon.client.model.Measurement
 import pro.panopticon.client.model.MetricDimension.Companion.instanceDimension
 import pro.panopticon.client.sensor.Sensor
 import pro.panopticon.client.util.SystemStatus
-import java.util.ArrayList
-import java.util.Optional
 
 class MemorySensor @JvmOverloads constructor(
     private val warnLimitNow: Int = 85,
     private val errorLimitNow: Int = 95,
     private val warnLimitHeap: Int = 75,
     private val errorLimitHeap: Int = 95,
-    hostname: String? = null,
+    private val hostname: String? = null,
 ) : Sensor {
-    private val hostname: Optional<String> = Optional.ofNullable(hostname)
+
     override fun measure(): List<Measurement> {
-        val s = SystemStatus()
-        val measurements: MutableList<Measurement> = ArrayList()
-        putMemoryStatus(measurements, "mem.heap.now", s.heapUsed(), s.heapMax(), warnLimitNow, errorLimitNow)
-        putMemoryStatus(measurements, "mem.heap.lastGC", s.heapAfterGC(), s.heapMax(), warnLimitHeap, errorLimitHeap)
-        return measurements
+        return SystemStatus().let {
+            listOfNotNull(
+                createMeasurement("mem.heap.now", it.heapUsed(), it.heapMax(), warnLimitNow, errorLimitNow),
+                createMeasurement("mem.heap.lastGC", it.heapAfterGC(), it.heapMax(), warnLimitHeap, errorLimitHeap)
+            )
+        }
     }
 
-    private fun putMemoryStatus(
-        measurements: MutableList<Measurement>,
+    private fun createMeasurement(
         key: String,
         used: Long,
         max: Long,
         warnLimit: Int,
         errorLimit: Int,
-    ) {
+    ): Measurement? {
         if (max == 0L || used == -1L) {
-            return
+            return null
         }
         val percentUsed = used / (max / 100)
         val displayValue = toMB(used).toString() + " of " + toMB(max) + " MB (" + percentUsed + "%)"
-        val dimensions = hostname
-            .map { h: String? ->
-                listOf(instanceDimension(
-                    h!!))
-            }
-            .orElse(emptyList())
-        measurements.add(
-            Measurement(
-                key,
-                status(percentUsed, warnLimit, errorLimit),
-                displayValue,
-                Measurement.CloudwatchValue(
-                    percentUsed.toDouble(),
-                    StandardUnit.Percent,
-                    dimensions
-                ),
-                DESCRIPTION))
+        val dimensions = hostname?.let { instanceDimension(it) }
+                             ?.let { listOf(it) }
+                         ?: emptyList()
+
+        return Measurement(
+            key = key,
+            status = status(percentUsed, warnLimit, errorLimit),
+            displayValue = displayValue,
+            cloudwatchValue = Measurement.CloudwatchValue(
+                percentUsed.toDouble(),
+                StandardUnit.Percent,
+                dimensions,
+            ),
+            description = DESCRIPTION,
+        )
     }
 
     private fun status(percentUsed: Long, warnLimit: Int, errorLimit: Int): String {
-        return if (percentUsed > errorLimit) {
-            "ERROR"
-        } else if (percentUsed > warnLimit) {
-            "WARN"
-        } else {
-            "INFO"
+        return when {
+            percentUsed > errorLimit -> "ERROR"
+            percentUsed > warnLimit -> "WARN"
+            else -> "INFO"
         }
     }
 

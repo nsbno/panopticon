@@ -7,11 +7,12 @@ import java.time.LocalDateTime
 class ReportTimeSensor : Sensor {
     override fun measure(): List<Measurement> {
         return listOf(
-            Measurement("report.generated", "INFO", LocalDateTime.now().toString(), DESCRIPTION)
+            Measurement(
+                key = "report.generated",
+                status = "INFO",
+                displayValue = LocalDateTime.now().toString(),
+                description = "",
+            )
         )
-    }
-
-    companion object {
-        private const val DESCRIPTION = ""
     }
 }

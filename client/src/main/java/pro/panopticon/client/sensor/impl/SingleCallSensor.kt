@@ -34,7 +34,6 @@ open class SingleCallSensor : Sensor {
             Status.ERROR -> "ERROR"
             Status.WARN -> "WARN"
             Status.OK -> "INFO"
-            else -> ""
         }
     }
 
@@ -43,7 +42,6 @@ open class SingleCallSensor : Sensor {
             Status.ERROR -> "In error"
             Status.WARN -> "Status: WARN"
             Status.OK -> "Status: OK"
-            else -> "Status: OK"
         }
     }
 

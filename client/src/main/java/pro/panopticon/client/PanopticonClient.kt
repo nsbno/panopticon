@@ -15,10 +15,8 @@ import pro.panopticon.client.model.Status
 import pro.panopticon.client.sensor.Sensor
 import java.io.ByteArrayInputStream
 import java.io.IOException
-import java.util.ArrayList
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
-import java.util.stream.Collectors
 
 class PanopticonClient(
     private val baseUri: String,
@@ -63,21 +61,18 @@ class PanopticonClient(
         }
     }
 
-    private fun collectMeasurementsFromSensors(sensors: List<Sensor>): List<Measurement?> {
-        return sensors.parallelStream()
-            .map { sensor ->
-                try {
-                    return@map sensor.measure()
-                } catch (e: Exception) {
-                    LOG.warn("Got error running sensor: " + sensor.javaClass.name, e)
-                    return@map ArrayList<Measurement>()
-                }
+    private fun collectMeasurementsFromSensors(sensors: List<Sensor>): List<Measurement> {
+        return sensors.flatMap {
+            try {
+                it.measure()
+            } catch (e: Exception) {
+                LOG.warn("Got error running sensor: " + it.javaClass.name, e)
+                emptyList()
             }
-            .flatMap { it.stream() }
-            .collect(Collectors.toList())
+        }
     }
 
-    fun sendMeasurementsToPanopticon(status: Status?): Boolean {
+    fun sendMeasurementsToPanopticon(status: Status): Boolean {
         try {
             val json = OBJECT_MAPPER.writeValueAsString(status)
             val uri = "$baseUri/external/status"
@@ -98,15 +93,18 @@ class PanopticonClient(
         }
     }
 
-    private fun sendSelectMeasurementsToCloudwatch(measurements: List<Measurement?>) {
-        val statistics = measurements.stream()
-            .filter { m: Measurement? -> m!!.cloudwatchValue != null }
-            .map { m: Measurement? ->
-                CloudwatchClient.CloudwatchStatistic(
-                    m!!.key, m.cloudwatchValue!!.value, m.cloudwatchValue!!.unit)
-                    .withDimensions(m.cloudwatchValue!!.dimensions)
+    private fun sendSelectMeasurementsToCloudwatch(measurements: List<Measurement>) {
+        val statistics = measurements
+            .mapNotNull { measurement ->
+                measurement.cloudwatchValue?.let { cloudwatchValue ->
+                    CloudwatchClient.CloudwatchStatistic(
+                        measurement.key,
+                        cloudwatchValue.value,
+                        cloudwatchValue.unit
+                    )
+                        .withDimensions(cloudwatchValue.dimensions)
+                }
             }
-            .collect(Collectors.toList())
         if (cloudwatchClient != null && hasCloudwatchConfig != null && hasCloudwatchConfig.sensorStatisticsEnabled()) {
             cloudwatchClient.sendStatistics(namespace, statistics)
         }

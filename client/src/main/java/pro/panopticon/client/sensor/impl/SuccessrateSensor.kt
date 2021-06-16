@@ -89,7 +89,7 @@ open class SuccessrateSensor : Sensor {
     }
 
     private fun getQueueForKey(key: Sensor.AlertInfo): CircularFifoQueue<Tick> {
-        return eventQueues.computeIfAbsent(key) { k: Sensor.AlertInfo? -> CircularFifoQueue(numberToKeep) }
+        return eventQueues.computeIfAbsent(key) { CircularFifoQueue(numberToKeep) }
     }
 
     override fun measure(): List<Measurement> {
