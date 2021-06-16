@@ -65,7 +65,7 @@ class PanopticonClient(
 
     private fun collectMeasurementsFromSensors(sensors: List<Sensor>): List<Measurement?> {
         return sensors.parallelStream()
-            .map { sensor: Sensor ->
+            .map { sensor ->
                 try {
                     return@map sensor.measure()
                 } catch (e: Exception) {
