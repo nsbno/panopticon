@@ -73,7 +73,7 @@ class PanopticonClient(
                     return@map ArrayList<Measurement>()
                 }
             }
-            .flatMap { obj: List<Measurement?> -> obj.stream() }
+            .flatMap { it.stream() }
             .collect(Collectors.toList())
     }
 
