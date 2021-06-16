@@ -13,8 +13,7 @@ class Measurement(
         status,
         displayValue,
         null,
-        description) {
-    }
+        description)
 
     override fun toString(): String {
         return "Measurement{" +
