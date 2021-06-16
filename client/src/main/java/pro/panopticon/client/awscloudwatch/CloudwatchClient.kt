@@ -29,7 +29,7 @@ class CloudwatchClient(cloudwatchConfig: HasCloudwatchConfig) {
     }
 
     fun sendStatistics(namespace: String, statistics: List<CloudwatchStatistic>?) {
-        if (statistics == null || statistics.isEmpty()) {
+        if (statistics.isNullOrEmpty()) {
             return
         }
         val before = System.currentTimeMillis()
