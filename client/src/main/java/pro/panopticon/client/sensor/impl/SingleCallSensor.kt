@@ -8,7 +8,7 @@ import java.util.stream.Collectors
 open class SingleCallSensor : Sensor {
     private val measurements: MutableMap<Sensor.AlertInfo, Status>
     override fun measure(): List<Measurement> {
-        return measurements.entries.map { it: Map.Entry<Sensor.AlertInfo, Status> ->
+        return measurements.entries.map { 
             Measurement(
                 it.key.sensorKey,
                 getPanopticonStatus(it.value),
