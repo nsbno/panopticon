@@ -87,7 +87,7 @@ class CloudwatchClient(cloudwatchConfig: HasCloudwatchConfig) {
 
     init {
         val clientBuilder = AmazonCloudWatchClientBuilder.standard()
-        if (!Strings.isNullOrEmpty(cloudwatchConfig.region)) {
+        if (!cloudwatchConfig.region.isNullOrEmpty()) {
             clientBuilder.withRegion(Regions.fromName(cloudwatchConfig.region))
         }
         if (credentialsProvided(cloudwatchConfig)) {
