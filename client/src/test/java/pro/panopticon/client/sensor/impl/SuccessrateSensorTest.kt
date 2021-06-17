@@ -29,7 +29,7 @@ class SuccessrateSensorTest {
     @Test
     fun should_get_status_info() {
         val sensor = SuccessrateSensor(100, 0.1, 0.2)
-        IntStream.range(0, 100).forEach { i: Int -> sensor.tickSuccess(Sensor.AlertInfo("key1", "description")) }
+        IntStream.range(0, 100).forEach { sensor.tickSuccess(Sensor.AlertInfo("key1", "description")) }
         val measurements = sensor.measure()
         Assert.assertThat(measurements.size, Is.`is`(1))
         val key1 = measurements.stream().filter { m: Measurement -> m.key == "key1" }.findAny()
@@ -42,8 +42,8 @@ class SuccessrateSensorTest {
     @Test
     fun should_get_status_warn() {
         val sensor = SuccessrateSensor(100, 0.1, 0.2)
-        IntStream.range(0, 90).forEach { i: Int -> sensor.tickSuccess(Sensor.AlertInfo("key1", "description")) }
-        IntStream.range(0, 10).forEach { i: Int -> sensor.tickFailure(Sensor.AlertInfo("key1", "description")) }
+        IntStream.range(0, 90).forEach { sensor.tickSuccess(Sensor.AlertInfo("key1", "description")) }
+        IntStream.range(0, 10).forEach { sensor.tickFailure(Sensor.AlertInfo("key1", "description")) }
         val measurements = sensor.measure()
         Assert.assertThat(measurements.size, Is.`is`(1))
         val key1 = measurements.stream().filter { m: Measurement -> m.key == "key1" }.findAny()
@@ -56,8 +56,8 @@ class SuccessrateSensorTest {
     @Test
     fun should_get_status_error() {
         val sensor = SuccessrateSensor(100, 0.1, 0.2)
-        IntStream.range(0, 80).forEach { i: Int -> sensor.tickSuccess(Sensor.AlertInfo("key1", "description")) }
-        IntStream.range(0, 20).forEach { i: Int -> sensor.tickFailure(Sensor.AlertInfo("key1", "description")) }
+        IntStream.range(0, 80).forEach { sensor.tickSuccess(Sensor.AlertInfo("key1", "description")) }
+        IntStream.range(0, 20).forEach { sensor.tickFailure(Sensor.AlertInfo("key1", "description")) }
         val measurements = sensor.measure()
         Assert.assertThat(measurements.size, Is.`is`(1))
         val key1 = measurements.stream().filter { m: Measurement -> m.key == "key1" }.findAny()
@@ -70,7 +70,7 @@ class SuccessrateSensorTest {
     @Test
     fun should_get_status_info_when_warn_levels_is_null() {
         val sensor = SuccessrateSensor(100, null, null)
-        IntStream.range(0, 100).forEach { i: Int -> sensor.tickFailure(Sensor.AlertInfo("key1", "description")) }
+        IntStream.range(0, 100).forEach { sensor.tickFailure(Sensor.AlertInfo("key1", "description")) }
         val measurements = sensor.measure()
         Assert.assertThat(measurements.size, Is.`is`(1))
         val key1 = measurements.stream().filter { m: Measurement -> m.key == "key1" }.findAny()
@@ -83,8 +83,8 @@ class SuccessrateSensorTest {
     @Test
     fun should_only_keep_last_XXX_measurements() {
         val sensor = SuccessrateSensor(100, 0.1, 0.2)
-        IntStream.range(0, 100).forEach { i: Int -> sensor.tickFailure(Sensor.AlertInfo("key1", "description")) }
-        IntStream.range(0, 100).forEach { i: Int -> sensor.tickSuccess(Sensor.AlertInfo("key1", "description")) }
+        IntStream.range(0, 100).forEach { sensor.tickFailure(Sensor.AlertInfo("key1", "description")) }
+        IntStream.range(0, 100).forEach { sensor.tickSuccess(Sensor.AlertInfo("key1", "description")) }
         val measurements = sensor.measure()
         Assert.assertThat(measurements.size, Is.`is`(1))
         val key1 = measurements.stream().filter { m: Measurement -> m.key == "key1" }.findAny()
@@ -97,10 +97,10 @@ class SuccessrateSensorTest {
     @Test
     fun should_keep_data_for_multiple_keys() {
         val sensor = SuccessrateSensor(100, 0.1, 0.2)
-        IntStream.range(0, 50).forEach { i: Int -> sensor.tickSuccess(Sensor.AlertInfo("key1", "description")) }
-        IntStream.range(0, 50).forEach { i: Int -> sensor.tickFailure(Sensor.AlertInfo("key1", "description")) }
-        IntStream.range(0, 98).forEach { i: Int -> sensor.tickSuccess(Sensor.AlertInfo("key2", "description")) }
-        IntStream.range(0, 2).forEach { i: Int -> sensor.tickFailure(Sensor.AlertInfo("key2", "description")) }
+        IntStream.range(0, 50).forEach { sensor.tickSuccess(Sensor.AlertInfo("key1", "description")) }
+        IntStream.range(0, 50).forEach { sensor.tickFailure(Sensor.AlertInfo("key1", "description")) }
+        IntStream.range(0, 98).forEach { sensor.tickSuccess(Sensor.AlertInfo("key2", "description")) }
+        IntStream.range(0, 2).forEach { sensor.tickFailure(Sensor.AlertInfo("key2", "description")) }
         val measurements = sensor.measure()
         Assert.assertThat(measurements.size, Is.`is`(2))
         val key1 = measurements.stream().filter { m: Measurement -> m.key == "key1" }.findAny()
@@ -118,8 +118,8 @@ class SuccessrateSensorTest {
     @Test
     fun should_display_description_when_present() {
         val sensor = SuccessrateSensor(100, 0.1, 0.2)
-        IntStream.range(0, 50).forEach { i: Int -> sensor.tickSuccess(Sensor.AlertInfo("key1", "description")) }
-        IntStream.range(0, 50).forEach { i: Int -> sensor.tickFailure(Sensor.AlertInfo("key1", "description")) }
+        IntStream.range(0, 50).forEach { sensor.tickSuccess(Sensor.AlertInfo("key1", "description")) }
+        IntStream.range(0, 50).forEach { sensor.tickFailure(Sensor.AlertInfo("key1", "description")) }
         val measurements = sensor.measure()
         val key1 = measurements.stream().filter { m: Measurement -> m.key == "key1" }.findAny()
         Assert.assertThat(key1.get().description, Is.`is`("description"))
@@ -130,9 +130,9 @@ class SuccessrateSensorTest {
         val nowSupplier = NowSupplierMock()
         val sensor = SuccessrateSensor(100, 0.1, 0.2, nowSupplier)
         nowSupplier.mockThePast = true
-        IntStream.range(0, 50).forEach { i: Int -> sensor.tickFailure(Sensor.AlertInfo("key1", "description")) }
+        IntStream.range(0, 50).forEach { sensor.tickFailure(Sensor.AlertInfo("key1", "description")) }
         nowSupplier.mockThePast = false
-        IntStream.range(0, 50).forEach { i: Int -> sensor.tickSuccess(Sensor.AlertInfo("key1", "description")) }
+        IntStream.range(0, 50).forEach { sensor.tickSuccess(Sensor.AlertInfo("key1", "description")) }
         val measurements = sensor.measure()
         val key1 = measurements.stream().filter { m: Measurement -> m.key == "key1" }.findAny()
         Assert.assertThat(key1.get().status, Is.`is`("INFO"))

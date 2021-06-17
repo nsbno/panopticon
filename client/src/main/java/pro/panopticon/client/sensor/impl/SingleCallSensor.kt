@@ -3,12 +3,11 @@ package pro.panopticon.client.sensor.impl
 import pro.panopticon.client.model.Measurement
 import pro.panopticon.client.sensor.Sensor
 import java.util.HashMap
-import java.util.stream.Collectors
 
 open class SingleCallSensor : Sensor {
     private val measurements: MutableMap<Sensor.AlertInfo, Status>
     override fun measure(): List<Measurement> {
-        return measurements.entries.map { it: Map.Entry<Sensor.AlertInfo, Status> ->
+        return measurements.entries.map {
             Measurement(
                 it.key.sensorKey,
                 getPanopticonStatus(it.value),
@@ -35,7 +34,6 @@ open class SingleCallSensor : Sensor {
             Status.ERROR -> "ERROR"
             Status.WARN -> "WARN"
             Status.OK -> "INFO"
-            else -> ""
         }
     }
 
@@ -44,7 +42,6 @@ open class SingleCallSensor : Sensor {
             Status.ERROR -> "In error"
             Status.WARN -> "Status: WARN"
             Status.OK -> "Status: OK"
-            else -> "Status: OK"
         }
     }
 

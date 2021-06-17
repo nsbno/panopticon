@@ -1,9 +1,13 @@
 package pro.panopticon.client.model
 
-class MetricDimension private constructor(val name: String, val value: String) {
+data class MetricDimension private constructor(
+    val name: String,
+    val value: String,
+) {
     companion object {
         private const val PLATFORM_DIMENSION_NAME = "Platform"
         private const val INSTANCE_DIMENSION_NAME = "Instance"
+
         fun platformDimension(value: String): MetricDimension {
             return MetricDimension(PLATFORM_DIMENSION_NAME, value)
         }

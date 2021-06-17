@@ -7,6 +7,7 @@ import pro.panopticon.client.sensor.Sensor
 
 class SingleCallSensorTest {
     val ALARM_DESCRIPTION = "Alarm description"
+
     @Test
     fun returns_empty_list_of_measurements_when_no_measurements() {
         val sensor = SingleCallSensor()

@@ -15,6 +15,7 @@ class SystemStatus {
     private val survivor: Optional<MemoryPoolMXBean>
     private val old: Optional<MemoryPoolMXBean>
     private val osBean: OperatingSystemMXBean
+
     fun heapUsed(): Long {
         return edenUsed() + survivorUsed() + oldUsed()
     }

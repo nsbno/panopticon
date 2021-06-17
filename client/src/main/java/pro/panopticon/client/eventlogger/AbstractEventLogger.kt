@@ -71,7 +71,7 @@ abstract class AbstractEventLogger(hasCloudwatchConfig: HasCloudwatchConfig, clo
     }
 
     private fun performTick(event: HasEventInfo, count: Double) {
-        counts.computeIfAbsent(event.eventName) { s: String? -> DoubleAdder() }.add(count)
+        counts.computeIfAbsent(event.eventName) { DoubleAdder() }.add(count)
     }
 
     override fun measure(): List<Measurement> {
@@ -84,11 +84,13 @@ abstract class AbstractEventLogger(hasCloudwatchConfig: HasCloudwatchConfig, clo
             cloudwatchClient!!.sendStatistics(namespace, statistics)
         }
         return countsToProcess.entries
-            .map { e: Map.Entry<String, DoubleAdder> ->
-                Measurement("audit." + e.key,
-                    "INFO",
-                    "Last minute: " + e.value.toDouble(),
-                    "")
+            .map { (key, value) ->
+                Measurement(
+                    key = "audit.$key",
+                    status = "INFO",
+                    displayValue = "Last minute: ${value.toDouble()}",
+                    description = ""
+                )
             }
             .toList()
     }
@@ -114,6 +116,6 @@ abstract class AbstractEventLogger(hasCloudwatchConfig: HasCloudwatchConfig, clo
     init {
         this.hasCloudwatchConfig = hasCloudwatchConfig
         this.cloudwatchClient = cloudwatchClient
-        namespace = String.format("audit-%s-%s", hasCloudwatchConfig.appName, hasCloudwatchConfig.environment)
+        namespace = "audit-${hasCloudwatchConfig.appName}-${hasCloudwatchConfig.environment}"
     }
 }

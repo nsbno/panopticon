@@ -8,39 +8,36 @@ import com.amazonaws.services.cloudwatch.model.Dimension
 import com.amazonaws.services.cloudwatch.model.MetricDatum
 import com.amazonaws.services.cloudwatch.model.PutMetricDataRequest
 import com.amazonaws.services.cloudwatch.model.StandardUnit
-import com.google.common.base.Strings
-import com.google.common.collect.Lists
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 import pro.panopticon.client.model.MetricDimension
-import java.util.ArrayList
 import java.util.Date
 
 class CloudwatchClient(cloudwatchConfig: HasCloudwatchConfig) {
-    private val LOG = LoggerFactory.getLogger(this.javaClass)
+
+    private val LOG = KotlinLogging.logger { }
     private val amazonCloudWatch: AmazonCloudWatch
+
     private fun credentialsProvided(cloudwatchConfig: HasCloudwatchConfig): Boolean {
-        val hasAccessKey = !Strings.isNullOrEmpty(cloudwatchConfig.awsAccessKeyId)
-        val hasSecretKey = !Strings.isNullOrEmpty(cloudwatchConfig.awsSecretKey)
+        val hasAccessKey = cloudwatchConfig.awsAccessKeyId.isNotEmpty()
+        val hasSecretKey = cloudwatchConfig.awsSecretKey.isNotEmpty()
         require(hasAccessKey == hasSecretKey) {
             "Either Access Key ID or Secret Key is missing. Please provide both, " +
-                    "or neither if you want to defer to DefaultAWSCredentialsProviderChain"
+            "or neither if you want to defer to DefaultAWSCredentialsProviderChain"
         }
         return hasAccessKey
     }
 
-    fun sendStatistics(namespace: String, statistics: List<CloudwatchStatistic>?) {
-        if (statistics == null || statistics.isEmpty()) {
+    fun sendStatistics(namespace: String, statistics: List<CloudwatchStatistic>) {
+        if (statistics.isNullOrEmpty()) {
             return
         }
         val before = System.currentTimeMillis()
-        val partitions = Lists.partition(statistics, 15)
+        val partitions = statistics.chunked(15)
+
         partitions.parallelStream()
             .forEach { postToCloudwatch(namespace, it) }
         val duration = System.currentTimeMillis() - before
-        LOG.info(String.format("Sent %d partitions to CloudWatch for namespace %s in %dms",
-            partitions.size,
-            namespace,
-            duration))
+        LOG.info("Sent ${partitions.size} partitions to CloudWatch for namespace $namespace in ${duration}ms")
     }
 
     private fun postToCloudwatch(namespace: String, statistics: List<CloudwatchStatistic>) {
@@ -60,7 +57,7 @@ class CloudwatchClient(cloudwatchConfig: HasCloudwatchConfig) {
         private val unit: StandardUnit = StandardUnit.Count,
         private val date: Date = Date(),
     ) {
-        private var dimensions: List<MetricDimension> = ArrayList()
+        private var dimensions: List<MetricDimension> = emptyList()
 
         fun withDimensions(dimensions: List<MetricDimension>): CloudwatchStatistic {
             this.dimensions = dimensions
@@ -87,7 +84,7 @@ class CloudwatchClient(cloudwatchConfig: HasCloudwatchConfig) {
 
     init {
         val clientBuilder = AmazonCloudWatchClientBuilder.standard()
-        if (!Strings.isNullOrEmpty(cloudwatchConfig.region)) {
+        if (!cloudwatchConfig.region.isNullOrEmpty()) {
             clientBuilder.withRegion(Regions.fromName(cloudwatchConfig.region))
         }
         if (credentialsProvided(cloudwatchConfig)) {
