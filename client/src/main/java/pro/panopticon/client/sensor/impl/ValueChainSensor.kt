@@ -48,18 +48,21 @@ open class ValueChainSensor : Sensor {
         val status = getStatus(info, data)
 
         val displayValue = when (status) {
-            Status.INFO -> "${info.expectedCompletions} fullføringer siste ${getDurationText(info.period)}"
+            Status.INFO -> {
+                val completions = data.getCompletionCountAfter(info.getEarliestCompletionTime())
+                "${completions} fullføringer siste ${getDurationText(info.period)}"
+            }
             Status.WARN -> {
                 val completions = data.getCompletionCountAfter(info.getEarliestCompletionTime())
                 "$completions fullføringer siste ${getDurationText(info.period)}. Forventet minst ${info.expectedCompletions}."
             }
             Status.ERROR -> {
                 val lastCompletionText = data.completions.lastOrNull()?.format(DateTimeFormatter.ISO_DATE_TIME)
-                                             ?.let { "Siste registrerte fullføring: $it" }
-                                         ?: "Ingen registrerte fullføringer siden oppstart."
-                val completions = data.getCompletionCountAfter(info.getEarliestCompletionTime())
-                "$completions fullføringer siste ${getDurationText(info.period)}. " +
-                "Forventet minst ${info.expectedCompletions}. $lastCompletionText"
+                    ?.let { "Siste registrerte fullføring: $it" }
+                    ?: "Ingen registrerte fullføringer siden oppstart."
+                val completions = data.getCompletionCountAfter(info.getEarliestCompletionTimeIncludingGracePeriod())
+                "$completions fullføringer siste ${getDurationText(info.period.plus(info.gracePeriod))}. " +
+                        "Forventet minst ${info.expectedCompletions}. $lastCompletionText"
             }
         }
 
@@ -90,9 +93,9 @@ open class ValueChainSensor : Sensor {
             info.disabledHours.isInsideDeadPeriod() -> Status.INFO
             data.completions.isEmpty() && now.isAfter(startupGracePeriod) -> Status.ERROR
             data.completions.isEmpty() && now.isAfter(startupPeriod) -> Status.WARN
-            data.completions.none { it.isBefore(info.getEarliestCompletionTimeIncludingGracePeriod()) } -> Status.ERROR
-            data.completions.none { it.isBefore(info.getEarliestCompletionTime()) } -> Status.WARN
-            else -> Status.INFO
+            data.completions.all { it.isAfter(info.getEarliestCompletionTime()) } -> Status.INFO
+            data.completions.all { it.isAfter(info.getEarliestCompletionTimeIncludingGracePeriod()) } -> Status.WARN
+            else -> Status.ERROR
         }
     }
 
