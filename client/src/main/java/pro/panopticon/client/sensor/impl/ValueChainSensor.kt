@@ -50,7 +50,7 @@ open class ValueChainSensor : Sensor {
         val displayValue = when (status) {
             Status.INFO -> {
                 val completions = data.getCompletionCountAfter(info.getEarliestCompletionTime())
-                "${completions} fullføringer siste ${getDurationText(info.period)}"
+                "Minst ${completions} fullføringer siste ${getDurationText(info.period)}"
             }
             Status.WARN -> {
                 val completions = data.getCompletionCountAfter(info.getEarliestCompletionTime())
