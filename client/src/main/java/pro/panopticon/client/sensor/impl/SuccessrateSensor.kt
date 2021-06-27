@@ -9,8 +9,6 @@ import pro.panopticon.client.util.NowSupplier
 import pro.panopticon.client.util.NowSupplierImpl
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
-import java.util.ArrayList
-import java.util.HashMap
 
 open class SuccessrateSensor : Sensor {
     private val LOG = KotlinLogging.logger { }
@@ -28,7 +26,7 @@ open class SuccessrateSensor : Sensor {
      *
      * Example: 0.1 will trigger a warning at 10% failure rate
      */
-    private val warnLimit: Double?
+    private val warnLimit: Double
 
     /**
      * Triggers an alert to Slack and PagerDuty when reached.
@@ -38,18 +36,18 @@ open class SuccessrateSensor : Sensor {
      *
      * Example: 0.2 will trigger an alert at 20% failure rate
      */
-    private val errorLimit: Double?
-    private val eventQueues: MutableMap<Sensor.AlertInfo, CircularFifoQueue<Tick>> = HashMap()
+    private val errorLimit: Double
+    private val eventQueues: MutableMap<Sensor.AlertInfo, CircularFifoQueue<Tick>> = mutableMapOf()
     private val nowSupplier: NowSupplier
 
-    constructor(numberToKeep: Int, warnLimit: Double?, errorLimit: Double?) {
+    constructor(numberToKeep: Int, warnLimit: Double, errorLimit: Double) {
         this.numberToKeep = numberToKeep
         this.warnLimit = warnLimit
         this.errorLimit = errorLimit
         nowSupplier = NowSupplierImpl()
     }
 
-    internal constructor(numberToKeep: Int, warnLimit: Double?, errorLimit: Double?, nowSupplier: NowSupplier) {
+    internal constructor(numberToKeep: Int, warnLimit: Double, errorLimit: Double, nowSupplier: NowSupplier) {
         this.numberToKeep = numberToKeep
         this.warnLimit = warnLimit
         this.errorLimit = errorLimit
@@ -117,24 +115,33 @@ open class SuccessrateSensor : Sensor {
             if (hasRecentErrorTicks) "" else " - no recent error ticks"
         )
         val status = decideStatus(enoughDataToAlert, percentFailureDouble, hasRecentErrorTicks)
-        return Measurement(alertInfo.sensorKey,
-            status,
-            display,
-            Measurement.CloudwatchValue(percentFailureDouble * 100, StandardUnit.Percent),
-            alertInfo.description)
+        return Measurement(
+            key = alertInfo.sensorKey,
+            status = status,
+            cloudwatchValue = Measurement.CloudwatchValue(percentFailureDouble * 100, StandardUnit.Percent),
+            displayValue = display,
+            description = alertInfo.description,
+        )
     }
 
-    private fun decideStatus(enoughDataToAlert: Boolean, percentFailure: Double, hasRecentErrorTicks: Boolean): String {
-        if (!enoughDataToAlert) return "INFO"
-        if (!hasRecentErrorTicks) return "INFO"
-        if (errorLimit != null && percentFailure >= errorLimit) return "ERROR"
-        return if (warnLimit != null && percentFailure >= warnLimit) "WARN" else "INFO"
+    private fun decideStatus(
+        enoughDataToAlert: Boolean,
+        percentFailure: Double,
+        hasRecentErrorTicks: Boolean,
+    ): Measurement.Status {
+        return when {
+            !enoughDataToAlert -> Measurement.Status.INFO
+            !hasRecentErrorTicks -> Measurement.Status.INFO
+            (errorLimit != null && percentFailure >= errorLimit) -> Measurement.Status.ERROR
+            (warnLimit != null && percentFailure >= warnLimit) -> Measurement.Status.WARN
+            else -> Measurement.Status.INFO
+        }
     }
 
     private fun hasRecentErrorTicks(events: List<Tick>): Boolean {
-        return events.stream()
+        return events
             .filter { tick: Tick -> tick.event == Event.FAILURE }
-            .anyMatch { tick: Tick ->
+            .any { tick: Tick ->
                 ChronoUnit.HOURS.between(tick.createdAt,
                     nowSupplier.now()) < HOURS_FOR_ERROR_TICK_TO_BE_CONSIDERED_OUTDATED
             }
