@@ -9,6 +9,7 @@ import pro.panopticon.client.util.NowSupplier
 import pro.panopticon.client.util.NowSupplierImpl
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
+import kotlin.math.min
 
 open class SuccessrateSensor : Sensor {
     private val LOG = KotlinLogging.logger { }
@@ -26,7 +27,7 @@ open class SuccessrateSensor : Sensor {
      *
      * Example: 0.1 will trigger a warning at 10% failure rate
      */
-    private val warnLimit: Double
+    private val warnLimit: Double?
 
     /**
      * Triggers an alert to Slack and PagerDuty when reached.
@@ -36,18 +37,18 @@ open class SuccessrateSensor : Sensor {
      *
      * Example: 0.2 will trigger an alert at 20% failure rate
      */
-    private val errorLimit: Double
+    private val errorLimit: Double?
     private val eventQueues: MutableMap<Sensor.AlertInfo, CircularFifoQueue<Tick>> = mutableMapOf()
     private val nowSupplier: NowSupplier
 
-    constructor(numberToKeep: Int, warnLimit: Double, errorLimit: Double) {
+    constructor(numberToKeep: Int, warnLimit: Double?, errorLimit: Double?) {
         this.numberToKeep = numberToKeep
         this.warnLimit = warnLimit
         this.errorLimit = errorLimit
         nowSupplier = NowSupplierImpl()
     }
 
-    internal constructor(numberToKeep: Int, warnLimit: Double, errorLimit: Double, nowSupplier: NowSupplier) {
+    internal constructor(numberToKeep: Int, warnLimit: Double?, errorLimit: Double?, nowSupplier: NowSupplier) {
         this.numberToKeep = numberToKeep
         this.warnLimit = warnLimit
         this.errorLimit = errorLimit
